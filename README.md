@@ -1,5 +1,7 @@
 # Doseleaf
 
+![Doseleaf app preview](docs/doseleaf.webp)
+
 **Smart Medicine Reminder** — an offline-first Android medicine reminder by **Wafyro Software**.
 
 Doseleaf helps users organise medicine schedules for themselves and family members while keeping records on-device.
