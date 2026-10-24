@@ -62,7 +62,7 @@ Profile, medicine, schedule, inventory and history records are intended to remai
 
 ## Open-source licence
 
-Licensed under the [MIT License](LICENSE). Copyright (c) 2026 Wafyro Software.
+Licensed under the [MIT License](LICENSE). Copyright (c) 2026 Afee Muhammod Wafy.
 
 ## Contributing
 
