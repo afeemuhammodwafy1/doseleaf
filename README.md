@@ -52,11 +52,11 @@ This source snapshot does not include a Gradle wrapper. For reproducible public 
 ## Version
 
 - Application ID: `com.wafyro.doseleaf`
-- Version name: `1.0.0`
-- Version code: `1`
+- Version name: `1.1.0`
+- Version code: `2`
 - Room database schema: `5`
 
-The app version name and code intentionally remain unchanged.
+The Android app version is configured in `app/build.gradle.kts`. Historical `1.0.0` entries below describe the earlier release and are retained for release history.
 
 ## Privacy
 
@@ -74,9 +74,9 @@ Issues and pull requests are welcome. Include Android version, device manufactur
 
 Doseleaf is a scheduling and record-keeping tool, not a medical professional. Enter medicine instructions from the prescription or healthcare professional. The app does not recommend doses or decide whether a medicine should be taken before/after food. A missing notification does not prove a dose was missed.
 
-## Current source update (1.0.0)
+## Historical source update (1.0.0)
 
-This source update keeps the application ID `com.wafyro.doseleaf`, `versionName` `1.0.0`, and `versionCode` `1`.
+The following notes describe the earlier `1.0.0` source snapshot (`versionCode` `1`); the current release is `1.1.0` (`versionCode` `2`).
 
 ### Medicine entry
 - Add Medicine opens as a full-screen page rather than a compact dialog.
@@ -116,3 +116,16 @@ This source update keeps the application ID `com.wafyro.doseleaf`, `versionName`
 ## Verification note
 
 This source archive has not been built with Gradle in this environment and has not been verified on a physical Android device. Please run `./gradlew assembleDebug` (or build from Android Studio) and test alarm delivery, reboot restoration, notification actions, and permission flows on the target device before treating it as a release.
+
+
+## Version 1.1.0 (versionCode 2)
+
+Follow-up UI corrections: profile creation is available in Add Medicine, duplicate system-bar insets were removed from Add/Edit Medicine, and the Medicines-page profile shortcut was removed. See `CHANGELOG.md`.
+
+- Refined the Home upcoming-dose empty state.
+- Removed Family Profile and Dose History shortcuts from the Home page; their dedicated destinations remain available.
+- Added profile management entry point on the Medicines page, including Create New Profile navigation.
+- Added Send Feedback on About Doseleaf, opening the support URL in an external browser.
+- Standardized navigation/back behavior and screen spacing where covered by the current implementation.
+
+Build and device verification must be completed in Android Studio; this source update does not claim a verified build.

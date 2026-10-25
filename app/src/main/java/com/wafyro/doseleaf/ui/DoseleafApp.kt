@@ -267,11 +267,11 @@ fun DoseleafApp() {
         AnimatedContent(targetState = page, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "page", modifier = Modifier.padding(padding)) { target ->
             when (target) {
                 Page.HOME -> HomeScreen(vm, { navigateTo(it) }, onEditMedicine = { selectedMedicine = it; navigateTo(Page.EDIT_MEDICINE) })
-                Page.MEDICINES -> MedicinesScreen(vm, onAdd = { navigateTo(Page.ADD_MEDICINE) }, onEdit = { selectedMedicine = it; navigateTo(Page.EDIT_MEDICINE) })
-                Page.ADD_MEDICINE -> AddMedicineDialog(profiles, onDismiss = { navigateBack() }, onSave = { profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri ->
+                Page.MEDICINES -> MedicinesScreen(vm, onAdd = { navigateTo(Page.ADD_MEDICINE) }, onEdit = { selectedMedicine = it; navigateTo(Page.EDIT_MEDICINE) }, onManageProfiles = { navigateTo(Page.PROFILES) })
+                Page.ADD_MEDICINE -> AddMedicineDialog(profiles, onCreateProfile = { name, relationship -> vm.addProfile(name, relationship) }, onDismiss = { navigateBack() }, onSave = { profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri ->
                     vm.addMedicine(profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri); navigateBack()
                 })
-                Page.EDIT_MEDICINE -> selectedMedicine?.let { med -> EditMedicineDialog(med, profiles, onDismiss = { navigateBack() }, onSave = { profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri ->
+                Page.EDIT_MEDICINE -> selectedMedicine?.let { med -> EditMedicineDialog(med, profiles, onCreateProfile = { name, relationship -> vm.addProfile(name, relationship) }, onDismiss = { navigateBack() }, onSave = { profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri ->
                     vm.updateMedicine(med, profile, name, dosage, times, note, expiry, foodTiming, foodOffset, photoUri); navigateBack()
                 }) } ?: EmptyState(Icons.Outlined.Medication, "No medicine selected", "Return to Medicines and choose a medicine to edit.")
                 Page.PROFILES -> ProfilesScreen(vm, onOpenProfile = { selectedProfile = it; navigateTo(Page.PROFILE_DETAIL) })
@@ -339,6 +339,28 @@ private data class UpcomingDose(val medicine: MedicineEntity, val scheduledAt: L
             }
         }
         item { Text("Upcoming in the next hour", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) }
+        if (upcomingDoses.isEmpty()) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = androidx.compose.ui.graphics.Color(0xFFF2FAF5),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(30.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("No upcoming doses", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = DeepGreen)
+                            Text("You're all set for now!", style = MaterialTheme.typography.bodyMedium, color = SecondaryText)
+                        }
+                        Icon(Icons.Outlined.EventAvailable, contentDescription = null, tint = ForestGreen, modifier = Modifier.size(42.dp))
+                    }
+                }
+            }
+        }
         items(upcomingDoses, key = { "home-${it.medicine.id}-${it.scheduledAt}" }) { dose ->
             Surface(shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, BorderColor), color = PureWhite) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -353,8 +375,6 @@ private data class UpcomingDose(val medicine: MedicineEntity, val scheduledAt: L
                 }
             }
         }
-        item { QuickCard("Family profiles", "Manage people in your care", Icons.Outlined.People) { navigate(Page.PROFILES) } }
-        item { QuickCard("Dose history", "Review or correct recorded doses", Icons.Outlined.History) { navigate(Page.HISTORY) } }
     }
 }
 @Composable private fun QuickCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
@@ -366,10 +386,9 @@ private data class UpcomingDose(val medicine: MedicineEntity, val scheduledAt: L
         }
     }
 }
-@Composable private fun MedicinesScreen(vm: DoseleafViewModel, onAdd: () -> Unit, onEdit: (MedicineEntity) -> Unit) {
+@Composable private fun MedicinesScreen(vm: DoseleafViewModel, onAdd: () -> Unit, onEdit: (MedicineEntity) -> Unit, onManageProfiles: () -> Unit) {
     val context = LocalContext.current
     val medicines by vm.medicines.collectAsState()
-    val profiles by vm.profiles.collectAsState()
     var pendingDelete by remember { mutableStateOf<MedicineEntity?>(null) }
     Column(Modifier.fillMaxSize().background(PureWhite).padding(horizontal = 20.dp)) {
         Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -457,7 +476,7 @@ private data class UpcomingDose(val medicine: MedicineEntity, val scheduledAt: L
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable private fun EditMedicineDialog(
-    medicine: MedicineEntity, profiles: List<FamilyProfileEntity>, onDismiss: () -> Unit,
+    medicine: MedicineEntity, profiles: List<FamilyProfileEntity>, onCreateProfile: (String, String) -> Unit, onDismiss: () -> Unit,
     onSave: (Long, String, String, List<Pair<Int, Int>>, String, Long?, String, Int, String?) -> Unit
 ) {
     val context = LocalContext.current
@@ -480,7 +499,7 @@ private data class UpcomingDose(val medicine: MedicineEntity, val scheduledAt: L
     val editScrollState = rememberScrollState()
     val editScope = rememberCoroutineScope()
     Surface(Modifier.fillMaxSize(), color = PureWhite) {
-        Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onDismiss) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
                 Text("Edit medicine", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -541,7 +560,7 @@ private fun timeToAmPm(raw: String): String {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable private fun AddMedicineDialog(
-    profiles: List<FamilyProfileEntity>, onDismiss: () -> Unit,
+    profiles: List<FamilyProfileEntity>, onCreateProfile: (String, String) -> Unit, onDismiss: () -> Unit,
     onSave: (Long, String, String, List<Pair<Int, Int>>, String, Long?, String, Int, String?) -> Unit
 ) {
     val context = LocalContext.current
@@ -559,10 +578,13 @@ private fun timeToAmPm(raw: String): String {
     var note by remember { mutableStateOf("") }
     var profileId by remember { mutableLongStateOf(0L) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showCreateProfile by remember { mutableStateOf(false) }
+    var newProfileName by remember { mutableStateOf("") }
+    var newProfileRelationship by remember { mutableStateOf("") }
     val formScrollState = rememberScrollState()
     val formScope = rememberCoroutineScope()
     Surface(Modifier.fillMaxSize().background(PureWhite), color = PureWhite) {
-            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDismiss) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Back") }
                     Text("Add medicine", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -611,6 +633,18 @@ private fun timeToAmPm(raw: String): String {
                             Text(p.name)
                         }
                     }
+                    TextButton(onClick = { showCreateProfile = true }) {
+                        Icon(Icons.Outlined.Add, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Create New Profile")
+                    }
+                } else {
+                    Text("No profiles yet. Create one to continue.", color = SecondaryText)
+                    TextButton(onClick = { showCreateProfile = true }) {
+                        Icon(Icons.Outlined.Add, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("Create New Profile")
+                    }
                 }
                 }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -635,6 +669,27 @@ private fun timeToAmPm(raw: String): String {
         }, modifier = Modifier.weight(1f)) { Text("Save medicine") }
             }
         }
+    }
+    if (showCreateProfile) {
+        AlertDialog(
+            onDismissRequest = { showCreateProfile = false },
+            title = { Text("Create New Profile") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = newProfileName, onValueChange = { newProfileName = it }, label = { Text("Name *") }, singleLine = true)
+                    OutlinedTextField(value = newProfileRelationship, onValueChange = { newProfileRelationship = it }, label = { Text("Relationship (optional)") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = newProfileName.isNotBlank(), onClick = {
+                    onCreateProfile(newProfileName.trim(), newProfileRelationship.trim())
+                    showCreateProfile = false
+                    newProfileName = ""
+                    newProfileRelationship = ""
+                }) { Text("Create profile") }
+            },
+            dismissButton = { TextButton(onClick = { showCreateProfile = false }) { Text("Cancel") } }
+        )
     }
 }
 @Composable private fun ProfilesScreen(vm: DoseleafViewModel, onOpenProfile: (FamilyProfileEntity) -> Unit) {
@@ -822,6 +877,7 @@ private fun timeToAmPm(raw: String): String {
     var vibration by remember { mutableStateOf(prefs.getBoolean("vibration", true)) }
     var reminders by remember { mutableStateOf(prefs.getBoolean("reminders", true)) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    BackHandler(enabled = selectedCategory != null) { selectedCategory = null }
     var snoozeDialog by remember { mutableStateOf(false) }
     var snoozeMinutes by remember { mutableIntStateOf(prefs.getInt("snooze_minutes", 10)) }
     var pendingRestore by remember { mutableStateOf<Uri?>(null) }
@@ -993,7 +1049,7 @@ private fun timeToAmPm(raw: String): String {
         }
         if (selectedCategory == "About") {
         item { SettingRow("How to use", "View the getting-started guide", Icons.Outlined.MenuBook) { navigate(Page.GUIDE) } }
-        item { SettingRow("About Doseleaf", "Wafyro Software · Version 1.0.0", Icons.Outlined.Info) { navigate(Page.ABOUT) } }
+        item { SettingRow("About Doseleaf", "Wafyro Software · Version 1.1.0", Icons.Outlined.Info) { navigate(Page.ABOUT) } }
         }
         if (selectedCategory == "Permissions") {
         item { SettingRow("Enable notifications", "Request permission to show medicine reminder notifications", Icons.Outlined.NotificationsActive) {
@@ -1083,10 +1139,19 @@ private fun timeToAmPm(raw: String): String {
         Spacer(Modifier.height(20.dp))
         Text(tr(LocalContext.current, "About Doseleaf"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text("Organize medication schedules and record dose activity. Your information is stored locally on this device.", color = SecondaryText)
+        val context = LocalContext.current
+        Button(
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://doseleaf.amwafy.xyz/support/"))
+                runCatching { context.startActivity(intent) }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = ForestGreen)
+        ) { Text("Send Feedback") }
         Spacer(Modifier.weight(1f))
         Text(tr(LocalContext.current, "FROM"), style = MaterialTheme.typography.labelSmall, color = SecondaryText)
         Text(tr(LocalContext.current, "Wafyro Software"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = DeepGreen)
-        Text(tr(LocalContext.current, "Version 1.0.0 (1)"), color = SecondaryText, style = MaterialTheme.typography.bodySmall)
+        Text(tr(LocalContext.current, "Version 1.1.0 (2)"), color = SecondaryText, style = MaterialTheme.typography.bodySmall)
     }
 }
 @Composable private fun SplashScreen() {

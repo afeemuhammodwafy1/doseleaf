@@ -1,6 +1,18 @@
 # Changelog
 
+## 1.1.0 (versionCode 2)
+
+- Updated app version to 1.1.0 (versionCode 2).
+- Added a dedicated empty state when no doses are scheduled in the upcoming-hour window.
+- Removed Family Profile and Dose History shortcuts from the Home page.
+- Added a Profiles entry point and Create New Profile action on the Medicines page.
+- Added Send Feedback to About Doseleaf; opens https://doseleaf.amwafy.xyz/support/ in an external browser via ACTION_VIEW.
+- Updated README and release notes.
+- Android Studio build and real-device verification remain pending.
+
 ## 1.0.0 (versionCode 1)
+
+
 
 Development-source update; version name/code remain unchanged.
 
@@ -41,3 +53,11 @@ These changes require Android Studio compilation and device QA; no build success
 - Added a Google Drive-targeted backup share flow with a Recommended label.
 - Protected the default profile from deletion and added profile-specific details pages.
 - Integrated first-run profile name entry into the first step of a five-step onboarding guide.
+
+### Follow-up UI fixes for 1.1.0
+
+- Added `Create New Profile` directly inside Add Medicine's profile-selection section, with an inline profile-creation dialog.
+- Removed the profile-creation shortcut from the Medicines page; profile creation is available in the requested Add Medicine flow.
+- Removed duplicate safe-drawing insets from Add/Edit Medicine forms. The parent Scaffold already applies system-bar insets, and applying them again pushed these screens too far down.
+- Reduced Add/Edit Medicine outer vertical padding to align their headers more closely with the app's other primary pages.
+- Full Android Studio build and device verification are still required.
